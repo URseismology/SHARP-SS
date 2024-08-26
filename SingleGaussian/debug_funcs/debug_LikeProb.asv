@@ -1,0 +1,49 @@
+% debug: calculate likelihood probability for different models
+
+data = load(['/Users/evan/Documents/Research/THBD_test/' ...
+    'H30_vs3p5_Amp0p2_ricker_wide_rayp100.mat']);
+Z = data.Z;
+R = data.R;
+time = data.time;
+time = time - 60;
+Dt = time(2) - time(1);
+
+prior = define_prior(time, Z, R);
+
+loc = linspace(2, 40, 100);
+amp = 0.3;
+wid = linspace(0.5, 10, 100);
+
+LikeProb = zeros(length(loc), length(wid));
+
+for i = 1:length(loc)
+    for j = 1:length(wid)
+
+        model = create_initial_model_customize(prior, loc(i), amp, wid(j));
+        [LikeProb(i, j), ~, ~, ~, ~] = ...
+            calculate_like_prob(Z, R, model, prior, 1);
+
+    end
+end
+
+%%
+% Find the maximum location
+[max_like, max_indices] = max(LikeProb(:));
+[max_loc_idx, max_wid_idx] = ind2sub(size(LikeProb), max_indices);
+max_loc = loc(max_loc_idx);
+max_wid = wid(max_wid_idx);
+
+% Plot the heatmap
+figure;
+imagesc(wid, loc, LikeProb);
+xlabel('Width');
+ylabel('Location');
+colorbar;
+
+% Mark the maximum location
+hold on;
+plot(max_wid, max_loc, 'ro', 'MarkerSize', 10, 'LineWidth', 2);
+text(max_wid + 0.2, max_loc, ['Max Coord: (' num2str(max_loc) ', ' num2str(max_wid) ')'], 'Color', 'r', 'FontSize', 12);
+hold off;
+
+title('')
